@@ -1,0 +1,15 @@
+(in-package :cluck/tests)
+
+(defmacro with-e-graph (eg-sym &body body)
+  (with-gensyms (x y)
+    `(let ((,eg-sym (make-instance 'e-graph)))
+       (flet ((e-add (,x)
+                (e-graph-add ,eg-sym ,x))
+              (e-merge (,x ,y)
+                (e-graph-merge ,eg-sym ,x ,y)))
+         (declare (ignorable (function e-add) (function e-merge)))
+         ,@body))))
+
+(declaim (ftype (function ((rational 0 1)) boolean) biased-coin-flip))
+(defun biased-coin-flip (heads-probability)
+  (< (random (denominator heads-probability)) (numerator heads-probability)))
