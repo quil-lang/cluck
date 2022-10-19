@@ -3,8 +3,8 @@
 
 Equivalence Graph (e-graph) implementation for Common Lisp.
 
-An e-graphs is a high performance data structure and set of algorithms for maintaining a set of
-equivalent trees, such as mathematical formulae representing the same function, or ASTs for multiple
+An e-graph is a data structure and set of algorithms for maintaining a set of
+equivalent graphs, such as mathematical formulae representing the same function, or multiple
 computer programs with the same behavior.
 
 A typical application of e-graphs is to find the "best" element of a set of equivalent trees (eg,

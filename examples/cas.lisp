@@ -1,5 +1,5 @@
 ;;;; Computer Algebra System using the CLuck e-graph library
-;;;; All Rights Reserved
+;;;; Copyright (c) Mark Polyakov, released under MIT license
 
 (in-package :cluck/examples/cas)
 
@@ -25,6 +25,7 @@
 (define-naive-rewriter cancel-multiply '(* a (/ a)) (a) '((1)))
 
 ;; Identity and Zero:
+;; Zeroes can cause the e-graph to blow up, because once a and (+ 0 a) are unified, some other rules can be applied infinitely many times. One possible solution is to add an option to the pattern matcher to exclude matches involving loops.
 
 (define-naive-rewriter identity-multiply '(* a 1) (a) `(,a))
 (define-naive-rewriter identity-add '(+ a 0) (a) `(,a))

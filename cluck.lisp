@@ -1,3 +1,5 @@
+;; Copyright (c) Mark Polyakov, released under MIT License
+
 (in-package :cluck)
 
 (defvar *rewrite-rules* (make-hash-table))
@@ -63,7 +65,7 @@
 
 ;; To implement an e-class analysis, one should specialize E-GRAPH-E-CLASS-CLASS to return a custom class. Then, they should specialize MAKE-E-CLASS-FROM-SINGLE-E-NODE on that class to setup initial analysis data. Finally, they should implement E-GRAPH-E-CLASSES-MERGE to properly combine data from multiple e-classes.
 
-;; general TODO: Probably should remove all specialization on e-classes; since both e-classes and e-graphs need to be parametrized based on the types of e-nodes, might as well centralized everything and only parametrize based on e-graphs.
+;; general TODO: Probably should remove all specialization on e-classes; since both e-classes and e-graphs need to be parametrized based on the types of e-nodes, might as well centralize everything and only parametrize based on e-graphs.
 
 (defclass e-graph ()
   ((e-node-e-classes :accessor e-graph-e-node-e-classes :type hash-table
@@ -796,12 +798,6 @@ PATTERN is evaluated, RETURN-VARS is not."
   (:documentation "See E-ANALYZER-E-NODE-VALUE. Generally speaking, should return some logically maximum/high-cost value for cost analyzers, since a circular reference has infinite size.")
   (:method (a)
     'parent))
-(defgeneric e-analyzer-already-explored-value (analyzer explored-value)
-  (:documentation "For some analyzers, a node that is referenced twice from different parents must be handled specially. Eg, using an AST size analyzer and an AST where a certain large subtree is used twice, it may be desirable to only count the cost of that subtree once because a program evaluating the AST will only need to evaluate that subtree once.
-
-This generic function takes a value which has already been explored and returns a new value which is used as the corresponding argument to E-ANALYZER-E-NODE-VALUE. The present function is not used when the value is being explored for the first time.")
-  (:method (a v)
-    v))
 
 (defclass tree-size-analyzer (e-analyzer-cost)
   ()
@@ -812,7 +808,7 @@ This generic function takes a value which has already been explored and returns 
 (defmethod e-analyzer-compare ((a tree-size-analyzer) v1 v2)
   (< v1 v2))
 (defmethod e-analyzer-parent-value ((a tree-size-analyzer))
-  9999999999) ;; TODO: maybe use a special value for max instead
+  most-positive-fixnum)
 
 (defclass tree-depth-analyzer (e-analyzer-cost)
   ()
@@ -838,8 +834,7 @@ The cost is determined as the lowest according to ANALYZER, which must be a subc
                (let ((ec (e-graph-e-class-id->e-class eg ecid)))
                  (multiple-value-bind (val exists-p) (gethash ec class-costs)
                    (cond
-                     (exists-p
-                      (e-analyzer-already-explored-value anal val)) ; also works when (eq 'parent val)
+                     (exists-p val)
                      (t
                       ;; temp value for cycle detection
                       (setf (gethash ec class-costs) (cons nil (e-analyzer-parent-value anal)))
