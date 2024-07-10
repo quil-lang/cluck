@@ -1,5 +1,4 @@
 # CLuck
-### _Mark Polyakov <mapolyakov@hrl.com>_
 
 Equivalence Graph (e-graph) implementation for Common Lisp.
 
