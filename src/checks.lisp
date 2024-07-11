@@ -1,6 +1,14 @@
+;;;; Functions to check that the invariants in an e-graphs are held.
 ;;;; Author: Mark Polyakov, released under MIT License
 
 (in-package #:cluck)
+
+(defun warn-if-dirty (e-graph)
+  (let ((dirty-enodes-count
+          (hash-table-count (e-graph-dirty-e-nodes e-graph))))
+    (unless (zerop dirty-enodes-count)
+      (warn "The e-graph is dirty! It has ~d dirty nodes."
+            dirty-enodes-count))))
 
 (declftype (e-graph) t check-e-graph-hashcons-invariant)
 (defun check-e-graph-hashcons-invariant (eg)

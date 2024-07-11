@@ -7,21 +7,14 @@
   (prin1-to-string (cons (funcall to-printable (car en))
                          (cdr en))))
 
-(declftype (e-graph &key (:stream (or stream (eql t))) (:e-node-car-to-printable function)) t e-graph-print)
-(defun e-graph-print (eg &key (stream t) (e-node-car-to-printable #'identity))
-  (let ((num-dirty-ens (hash-table-count (e-graph-dirty-e-nodes eg)))
-        (ids (e-graph-e-class-id-list eg)))
-    (when (not (zerop num-dirty-ens))
-      (warn "WARNING: The e-graph is dirty! (~a many dirty nodes).~%~%" num-dirty-ens))
-    (loop :for id :in ids
-          :for ec := (e-graph-e-class-id->e-class eg id)
-          :do (progn
-                (format stream "+---------------+~%| E-CLASS ~a~%+---------------+~%" id)
-                ;; I know format supports loops, don't @ me
-                (loop :for e-node :in (e-class-e-nodes ec)
-                      :do (format stream "| ~a~%"
-                                  (prin1-e-node-to-string e-node-car-to-printable e-node)))
-                (format stream "+---------------+~%~%")))))
+(declftype (e-graph &key (:stream (or stream (eql t)))) t e-graph-print)
+(defun e-graph-print (eg &key (stream t))
+  (warn-if-dirty eg)
+  (loop :for id :in (e-graph-e-class-id-list eg)
+        :for ec := (e-graph-e-class-id->e-class eg id)
+        :do (format stream "+---------------+~%| E-CLASS ~a~%+---------------+~%" id)
+            (format stream "~{| ~a~%~}" (e-class-e-nodes ec))
+            (format stream "+---------------+~%~%")))
 
 (defvar *dot-node-attrs* ""
   "A string of extra attributes to apply to nodes (e-nodes) in graphviz plots.")
@@ -31,13 +24,11 @@
 
 (defvar *dot-layout-engine* "dot")
 
-(declftype (e-graph &key (:stream (or stream (eql t))) (:e-node-car-to-printable function)) t e-graph-plot-dot)
-(defun e-graph-plot-dot (eg &key (stream t) (e-node-car-to-printable #'identity))
+(declftype (e-graph &key (:stream (or stream (eql t)))) t e-graph-plot-dot)
+(defun e-graph-plot-dot (eg &key (stream t))
   "Plot the e-graph as a DOT file suitable as input to graphviz."
-  (let ((num-dirty-ens (hash-table-count (e-graph-dirty-e-nodes eg)))
-        (ids (e-graph-e-class-id-list eg)))
-    (when (not (zerop num-dirty-ens))
-      (warn "WARNING: The e-graph is dirty! (~a many dirty nodes).~%~%" num-dirty-ens))
+  (warn-if-dirty eg)
+  (let ((ids (e-graph-e-class-id-list eg)))
     (format stream "digraph {~%compound = true; ~% node [shape=rectangle style=rounded ~a] graph [style=dashed color=\"#999999\" ~a]~%"
             *dot-node-attrs* *dot-subgraph-attrs*)
     ;; Add subgraphs and e-nodes
@@ -48,9 +39,7 @@
                 (format stream "subgraph cluster~s {~% " id)
                 ;; I know format supports loops, don't @ me
                 (loop :for e-node :in (e-class-e-nodes ec)
-                      :do (format stream "~s [label=~s];~%"
-                                  (prin1-e-node-to-string e-node-car-to-printable e-node)
-                                  (prin1-to-string (funcall e-node-car-to-printable (car e-node)))))
+                      :do (format stream "~s [label=~s];~%" e-node (car e-node)))
                 (format stream "}~%")))
     ;; Add edges
     (loop :for id :in ids
@@ -66,12 +55,11 @@
                                        (car (e-class-e-nodes (e-graph-e-class-id->e-class eg child))))
                               :do (assert (= child (e-graph-canonical-e-class-id eg child)))
                               :do (format stream "~s -> ~s [lhead = cluster~s ~@[label=\" ~a\"~]];~%"
-                                          (prin1-e-node-to-string e-node-car-to-printable en)
-                                          (prin1-e-node-to-string e-node-car-to-printable child-en)
+                                          en
+                                          child-en
                                           child
                                           ;; when multiple children, label edges
-                                          (when (< 1 (length (cdr en)))
-                                            i)))))
+                                          (unless (cdr en) i)))))
     (format stream "}~%")))
 
 (declftype (e-graph &rest t) t e-graph-plot-gui)
