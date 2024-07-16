@@ -2,7 +2,8 @@
 
 (in-package #:cluck)
 
-;; An enode is represented as a list whose CAR is a symbol denoting a function and whose CDR is a list of e-class IDs
+;; An enode is represented as a list whose CAR is a symbol denoting a
+;; function and whose CDR is a list of e-class IDs
 
 (deftype e-class-id ()
   "A (non-unique) NUMBER which identifies an e-class."

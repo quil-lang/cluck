@@ -8,6 +8,7 @@
 
 (defclass pattern ()
   ())
+
 (defclass naive-pattern (pattern)
   ((compiled-tree :initarg :compiled-tree :reader naive-pattern-compiled-tree
                   :initform (error "compiled-tree required") :type list)
