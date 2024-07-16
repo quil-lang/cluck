@@ -1,3 +1,5 @@
+;;;; Author: Mark Polyakov, released under MIT License
+
 (uiop:define-package :CLuck
   (:use :cl
         :alexandria)
