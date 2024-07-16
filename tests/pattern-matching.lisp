@@ -196,16 +196,10 @@
            "Allows bindings of the form (:exact sym) or (:bind sym). The former requires EQL between sym and the actual car and returns no bindings. The latter binds the car to the given symbol and never fails to match."
            (ecase (car binding-car)
              (:exact
-              (if (eql (cadr binding-car) actual-car)
-                  nil
-                  'no-match))
+              (unless (eql (second binding-car) actual-car)
+                'no-match))
              (:bind
-                 ;; emacs is being weird about the indentation here, something specific about :bind
-                 `((,(cadr binding-car) . ,actual-car)))))
-         (car-match-multiple (binding-car actual-car)
-           (if (integerp (/ actual-car binding-car))
-               nil
-               'no-match)))
+              `((,(second binding-car) . ,actual-car))))))
     (with-e-graph eg
       (let* ((two (e-add '(2)))
              (one (e-add '(1)))

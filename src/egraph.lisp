@@ -217,7 +217,7 @@ If EN's children are not listed just as e-class IDs, but as full e-node forms, s
   "Merge two e-classes together, by ID. All e-nodes in the two e-classes will be equivalent after this operation. If the two e-class IDs do not already refer to the same e-class, requires rebuild. Returns non-nil if the e-graph was actually modified (ie, the ecids didn't already point to the same e-class)."
   (let ((ec1 (e-graph-e-class-id->e-class eg ecid1))
         (ec2 (e-graph-e-class-id->e-class eg ecid2)))
-    (when (not (eq ec1 ec2))
+    (unless (eq ec1 ec2)
       (multiple-value-bind (preserved-ecid destroyed-ecid)
           (union-find-merge (e-graph-e-classes eg) ecid1 ecid2)
         (declare (ignore preserved-ecid))

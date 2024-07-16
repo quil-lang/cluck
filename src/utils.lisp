@@ -9,9 +9,8 @@
 (defun hash-table-peek (ht)
   (with-hash-table-iterator (next ht)
     (multiple-value-bind (has-value-p k) (next)
-      (if has-value-p
-          (values k t)
-          (values nil nil)))))
+      (when has-value-p
+        (values k t)))))
 
 (declftype (hash-table) t hash-table-pop)
 (defun hash-table-pop (ht)

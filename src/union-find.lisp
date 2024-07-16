@@ -3,7 +3,8 @@
 (in-package #:cluck)
 
 (deftype union-find-id ()
-  "An integer type large enough to hold the size of any reasonable union-find"
+  "An integer type large enough to hold the size of any reasonable
+union-find"
   (if (>= most-positive-fixnum (expt 2 60))
       'fixnum
       `(integer 0 ,(expt 2 60))))
