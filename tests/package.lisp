@@ -1,4 +1,2 @@
-(fiasco:define-test-package :cluck/tests
-  (:use
-   :cluck
-   :alexandria))
+(fiasco:define-test-package #:cluck/tests
+  (:use #:cluck #:alexandria))
