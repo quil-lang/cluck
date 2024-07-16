@@ -44,4 +44,6 @@
   (check-e-graph-congruence-invariant eg)
   t)
 
-;; TODO: add a function to print all representations of an e-class. Will be a bit annoying to deal with circular graphs.
+;; TODO: add a function to print all representations of an
+;; e-class. Will be a bit annoying to deal with circular graphs. See
+;; https://github.com/quil-lang/cluck/issues/5
