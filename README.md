@@ -22,6 +22,15 @@ optional dependency. If installed, CLuck will take advantage of it. (For example
 `E-GRAPH-EQUALITY-SATURATE-NAIVE` will match different rewrite rules in parallel (though it still
 has to insert replacements in series)).
 
+## HACKING
+
+You can run the test suite by executing `(asdf:test-system "cluck")` if
+cluck is in asdf's source registry. Otherwise, you can `cl:load` the
+script `scripts/run-test.lisp`. It takes care of adding cluck's
+directory to asdf's source registry before calling
+`asdf:test-system`. Furthermore, from the command line, you can use `make`
+to run that script with sbcl.
+
 ## License
 
 MIT

@@ -6,6 +6,9 @@
                :alexandria
                :fiasco
                :trivial-garbage)
+  :perform (test-op (op system)
+                    (symbol-call :fiasco '#:run-package-tests
+                                 :package '#:cluck/tests))
   :pathname "tests/"
   :serial t
   :components ((:file "package")
