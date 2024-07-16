@@ -1,4 +1,4 @@
-;; For more details, https://markasoftware.com/notes/cse-421.html#org1dca725
+;;;; Author: Mark Polyakov, released under MIT License
 
 (in-package :cluck)
 
@@ -101,4 +101,3 @@
         :for parent :across (union-find-parents union-find)
         :when (= i parent)
           :sum 1))
-

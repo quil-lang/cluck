@@ -1,3 +1,5 @@
+;;;; Author: Mark Polyakov, released under MIT License
+
 (in-package :cluck)
 
 (defmacro declftype (params ret &rest fnames)
