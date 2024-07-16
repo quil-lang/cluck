@@ -1,4 +1,4 @@
-(in-package :cluck/tests)
+(in-package #:cluck/tests)
 
 (deftest basic-adding-only ()
   (with-e-graph eg
@@ -23,7 +23,7 @@
            (new-times-class (e-graph-canonical-e-class-id eg times-class))
            (new-times-class-2 (e-add '(*))))
       (declare (ignore _))
-      
+
       (e-graph-rebuild eg)
       (is (e-graph-e-class-id= eg
                                new-plus-class new-plus-class-2

@@ -1,4 +1,4 @@
-(in-package :cluck/tests)
+(in-package #:cluck/tests)
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; NAIVE PATTERNS ;;

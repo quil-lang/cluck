@@ -1,6 +1,6 @@
 ;;;; Author: Mark Polyakov, released under MIT License
 
-(in-package :cluck)
+(in-package #:cluck)
 
 (declftype (function cons) string prin1-e-node-to-string)
 (defun prin1-e-node-to-string (to-printable en)

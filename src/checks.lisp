@@ -1,6 +1,6 @@
 ;;;; Author: Mark Polyakov, released under MIT License
 
-(in-package :cluck)
+(in-package #:cluck)
 
 (declftype (e-graph) t check-e-graph-hashcons-invariant)
 (defun check-e-graph-hashcons-invariant (eg)

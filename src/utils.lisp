@@ -1,6 +1,6 @@
 ;;;; Author: Mark Polyakov, released under MIT License
 
-(in-package :cluck)
+(in-package #:cluck)
 
 (defmacro declftype (params ret &rest fnames)
   `(declaim (ftype (function ,params ,ret) ,@fnames)))

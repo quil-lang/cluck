@@ -1,6 +1,6 @@
 ;;;; Author: Mark Polyakov, released under MIT License
 
-(in-package :cluck)
+(in-package #:cluck)
 
 (declftype (e-graph list &key (:noise (or boolean stream)) (:max-repetitions (integer 1)) (:summary-noise (or boolean stream))) t e-graph-equality-saturate-naive)
 (defun e-graph-equality-saturate-naive (eg rewriters &key noise (max-repetitions 50) (summary-noise noise))

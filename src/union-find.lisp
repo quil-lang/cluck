@@ -1,6 +1,6 @@
 ;;;; Author: Mark Polyakov, released under MIT License
 
-(in-package :cluck)
+(in-package #:cluck)
 
 (deftype union-find-id ()
   "An integer type large enough to hold the size of any reasonable union-find"

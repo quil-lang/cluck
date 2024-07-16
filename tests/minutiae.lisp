@@ -1,6 +1,6 @@
 ;; Tests for optional features, optimizations, etc
 
-(in-package :cluck/tests)
+(in-package #:cluck/tests)
 
 (deftest extraction-memory-sharing ()
   "When multiple e-nodes point to the same e-class, the representation of that e-class shall be shared in the extracted representation."
