@@ -44,9 +44,9 @@ Example patterns:
                 (assert (symbolp (car tree)) () "Functions must be constants in current impl")
                 `(application ,(car tree) ,@(mapcar #'compile-tree (cdr tree))))
                (t ; equivalent to (atom tree)
-                (when (and (symbolp tree)
-                           (string= "_" tree))
-                  (warn "Tried to compile a pattern involving a symbol named \"_\" in a package other than CLUCK. This will not be treated as a wildcard!"))
+                (and (symbolp tree)
+                     (string= "_" tree)
+                     (warn "Tried to compile a pattern involving a symbol named \"_\" in a package other than CLUCK. This will not be treated as a wildcard!"))
                 `(constant ,tree)))))
     (make-instance 'naive-pattern :compiled-tree (compile-tree pattern)
                                   :num-vars (length return-vars))))
@@ -117,112 +117,145 @@ Example patterns:
                              :test car=-fn))))))
 
 (defun default-car-match-fn (a b)
-  (if (eql a b)
-      nil
-      'no-match))
+  (unless (eql a b)
+    'no-match))
 
 (defun default-merge-car-bound-values-fn (a b id)
   (declare (ignore id))
-  (if (eql a b)
-      (values a t)
-      nil))
+  (when (eql a b)
+    (values a t)))
 
 (defclass graph-pattern (pattern)
   ((binding-restrictions
     :initarg :binding-restrictions
-    :documentation "Hashmap from binding symbols/other identifiers to e-node-like lists. The car of each of those lists is an object suitable to be the first arguent to CAR-MATCH-FN, while the rest of the list should be EQL-able objects which refer either to unbound bindings or to other entries in BINDING-RESTRICTIONS")
+    :documentation "Hashmap from binding symbols/other identifiers to e-node-like
+lists. The car of each of those lists is an object suitable to be the
+first arguent to CAR-MATCH-FN, while the rest of the list should be
+EQL-able objects which refer either to unbound bindings or to other
+entries in BINDING-RESTRICTIONS")
    (car-match-fn
-    :initarg :car-match-fn :initform #'default-car-match-fn
+    :initarg :car-match-fn
+    :initform #'default-car-match-fn
     :type (or symbol (function (t t) (or list (eql 'no-match))))
-    :documentation "A function which takes the CAR of a matcher from BINDING-RESTRICTIONS and the CAR of an e-node, and returns either an alist of bindings or the symbol NO-MATCH.
+    :documentation "A function which takes the CAR of a matcher from BINDING-RESTRICTIONS
+and the CAR of an e-node, and returns either an alist of bindings or
+the symbol NO-MATCH.
 
-The default implementation succeeds with no bindings if the arguments are EQL, and fails to match otherwise.")
+The default implementation succeeds with no bindings if the arguments
+are EQL, and fails to match otherwise.")
    (merge-car-bound-values-fn
-    :initarg :merge-car-bound-values-fn :initform #'default-merge-car-bound-values-fn
+    :initarg :merge-car-bound-values-fn
+    :initform #'default-merge-car-bound-values-fn
     :type (or symbol (function (t t t) (values t boolean)))
-    :documentation "A function which takes two possibly conflicting values assigned to the same binding id by CAR-MATCH-FN, and either reconciles them into a single value which it returns along with a second return value T, or fails to do so and returns (values nil nil). The last argument is the binding id the values were assigned to. It is often ignored.
+    :documentation "A function which takes two possibly conflicting values assigned to the
+same binding id by CAR-MATCH-FN, and either reconciles them into a
+single value which it returns along with a second return value T, or
+fails to do so and returns (values nil nil). The last argument is the
+binding id the values were assigned to. It is often ignored.
 
 The default implementation merges if the arguments are EQL, else fails.")
    (%binding-order :initform nil
                    :documentation "The order in which the bindings will be matched. Set automatically")
    (%binding-parents
     :initform (make-hash-table)
-    :documentation "Hashmap from binding IDs to a list of bindings listing this one as a child. Set automatically"))
-  (:documentation "A pattern which may be a graph rather than just a tree. For example, this allows us to match a pattern where two separate nodes must have the same child, but also enforce some restrictions on that child. It also allows matching graphs with multiple roots. Finally, it allows custom CAR matchers that allow parametrization based on the CAR of an e-node.
+    :documentation "Hashmap from binding IDs to a list of bindings listing this one as a
+child. Set automatically"))
+  (:documentation "A pattern which may be a graph rather than just a tree. For example,
+this allows us to match a pattern where two separate nodes must have
+the same child, but also enforce some restrictions on that child. It
+also allows matching graphs with multiple roots. Finally, it allows
+custom CAR matchers that allow parametrization based on the CAR of an
+e-node.
 
-All binding symbols which have restrictions (ie, appear as keys in BINDING-RESTRICTIONS) will be bound to specific e-nodes in the result. Binding symbols without restrictions (ie, appear as children in some element(s) of BINDING-RESTRICTIONS but do not appear as keys in BINDING-RESTRICTIONS) will be bound to e-class IDs, which implicitly represent that they could be bound to any node in the designated e-class.
+All binding symbols which have restrictions (ie, appear as keys in
+BINDING-RESTRICTIONS) will be bound to specific e-nodes in the
+result. Binding symbols without restrictions (ie, appear as children
+in some element(s) of BINDING-RESTRICTIONS but do not appear as keys
+in BINDING-RESTRICTIONS) will be bound to e-class IDs, which
+implicitly represent that they could be bound to any node in the
+designated e-class.
 
 Note that the graph of the pattern must be connected."))
 
 (defmethod initialize-instance :after ((pattern graph-pattern) &key)
   ;; Algorithm to determine %binding-order:
   ;; 1. Choose an arbitrary starting node.
-  ;; 2. Go forwards and backwards recursively, not stepping on the same stone twice.
-  ;; TODO: optimize: Our backwards matching gives us tons of flexibility about the order, and we can probably speed things up a /lot/ by matching in the optimal order.
+  ;; 2. Go forwards and backwards recursively, not stepping on the
+  ;; same stone twice.
+  ;; TODO: optimize: Our backwards matching gives us tons of
+  ;; flexibility about the order, and we can probably speed things up
+  ;; a /lot/ by matching in the optimal order.
   (with-slots (binding-restrictions %binding-order %binding-parents) pattern
     (flet ((parents (binding-id)
              "Return binding identifiers which have this one as children"
-             (loop :for other-binding-id :being :each :hash-key :of binding-restrictions
-                     :using (:hash-value other-binding-value)
-                   :when (member binding-id (cdr other-binding-value))
-                     :collect other-binding-id)))
-      (let ((stack (list (hash-table-peek binding-restrictions))))
-        (loop :while stack
-              :for elt := (pop stack)
-              :do (when (not (member elt %binding-order))
-                    (push elt %binding-order)
-                    ;; only want children with restrictions
-                    (let ((children (loop :for child :in (cdr (gethash elt binding-restrictions))
-                                          :when (gethash child binding-restrictions)
-                                            :collect child))
-                          ;; parents are naturally all in binding-restrictions
-                          (parents (parents elt)))
-                      (setf stack (append children parents stack))
-                      (setf (gethash elt %binding-parents) parents)))
-              :finally (progn
-                         (assert (set-equal %binding-order (hash-table-keys binding-restrictions))
-                                 () "Attempted to instantiate a graph pattern where not all gates are connected. (Not yet implemented, and would be slow if implemented)")
-                         (setf %binding-order (reverse %binding-order))))))))
+             (loop
+               :for other-binding-id :being :each :hash-key :of binding-restrictions
+                 :using (:hash-value other-binding-value)
+               :when (member binding-id (cdr other-binding-value))
+                 :collect other-binding-id)))
+      (loop
+        :with stack = (list (hash-table-peek binding-restrictions))
+        :while stack
+        :for elt := (pop stack)
+        :unless (member elt %binding-order)
+          :do (push elt %binding-order)
+              ;; only want children with restrictions
+              (let ((children
+                      (loop
+                        :for child :in (cdr (gethash elt binding-restrictions))
+                        :when (gethash child binding-restrictions)
+                          :collect child))
+                    ;; parents are naturally all in binding-restrictions
+                    (parents (parents elt)))
+                (setf stack (append children parents stack))
+                (setf (gethash elt %binding-parents) parents))
+        :finally (assert
+                  (set-equal %binding-order (hash-table-keys binding-restrictions))
+                  ()
+                  "Attempted to instantiate a graph pattern where not all gates are
+connected. (Not yet implemented, and would be slow if implemented)")
+                 (setf %binding-order (reverse %binding-order))))))
 
 (declftype (graph-pattern e-graph list) t check-graph-binding)
 (defun check-graph-binding (pat eg bindings-list)
   "Ensure that all of the bindings obey the constraints set out in the pattern."
   (with-slots (binding-restrictions car-match-fn merge-car-bound-values-fn) pat
     (dolist (bindings bindings-list)
-      (loop :for binding-id :being :each :hash-key :of binding-restrictions
-              :using (:hash-value restriction)
-            :for bound-cons := (assoc binding-id bindings)
-            :for bound := (progn
-                            (assert bound-cons () "Binding id ~A was restricted but not in bindings." binding-id)
-                            (cdr bound-cons))
-            :for unchecked-car-match := (funcall car-match-fn (car restriction) (car bound))
-            :for car-match := (progn
-                                (assert (not (eql 'no-match unchecked-car-match)) ()
-                                        "Binding id ~A car failed to match (bound car was ~A)" binding-id (car bound))
-                                unchecked-car-match)
-            ;; check that the car match is compatible with bindings
-            :do (loop :for (c-binding-id . c-bound) :in car-match
-                      :do (assert (assoc c-binding-id bindings) ()
-                                  "Car of id ~A matched binding-id ~A not found in bindings." binding-id c-binding-id)
-                      :do (multiple-value-bind (_ merged?)
-                              (funcall merge-car-bound-values-fn
-                                       c-bound (assoc-value bindings c-binding-id)
-                                       c-binding-id)
-                            (declare (ignore _))
-                            (assert merged? (c-bound (assoc-value c-binding-id bindings))
-                                    "Car matched binding value for id ~A incompatible with what was found in bindings." c-binding-id)))
-                ;; check that the binding corresponds to an actual e-node
-            :do (assert (e-graph-e-node->e-class-id eg bound) (bound)
-                        "Matched e-node for binding-id ~A not actually present in the e-graph." binding-id)
-                ;; check that the children belong to the e-classes they should.
-            :do (loop :for child-ecid :of-type e-class-id :in (cdr bound)
-                      :for child-binding-id :in (cdr restriction)
-                      :for child-bound := (assoc-value bindings child-binding-id)
-                      :do (assert (or (eql child-ecid child-bound) ; if unrestricted, will be ecid
-                                      (e-graph-e-class-id= eg
-                                                           child-ecid
-                                                           (e-graph-e-node->e-class-id eg child-bound)))
-                                  () "A child of binding id ~A, specifically ~A, did not agree with the ecid bound in the parent." binding-id child-binding-id))))))
+      (loop
+        :for binding-id :being :each :hash-key :of binding-restrictions
+          :using (:hash-value restriction)
+        :for bound-cons := (assoc binding-id bindings)
+        :for bound := (progn
+                        (assert bound-cons () "Binding id ~A was restricted but not in bindings." binding-id)
+                        (cdr bound-cons))
+        :for unchecked-car-match := (funcall car-match-fn (car restriction) (car bound))
+        :for car-match := (progn
+                            (assert (not (eql 'no-match unchecked-car-match)) ()
+                                    "Binding id ~A car failed to match (bound car was ~A)" binding-id (car bound))
+                            unchecked-car-match)
+        ;; check that the car match is compatible with bindings
+        :do (loop :for (c-binding-id . c-bound) :in car-match
+                  :do (assert (assoc c-binding-id bindings) ()
+                              "Car of id ~A matched binding-id ~A not found in bindings." binding-id c-binding-id)
+                  :do (multiple-value-bind (_ merged?)
+                          (funcall merge-car-bound-values-fn
+                                   c-bound (assoc-value bindings c-binding-id)
+                                   c-binding-id)
+                        (declare (ignore _))
+                        (assert merged? (c-bound (assoc-value c-binding-id bindings))
+                                "Car matched binding value for id ~A incompatible with what was found in bindings." c-binding-id)))
+            ;; check that the binding corresponds to an actual e-node
+        :do (assert (e-graph-e-node->e-class-id eg bound) (bound)
+                    "Matched e-node for binding-id ~A not actually present in the e-graph." binding-id)
+            ;; check that the children belong to the e-classes they should.
+        :do (loop :for child-ecid :of-type e-class-id :in (cdr bound)
+                  :for child-binding-id :in (cdr restriction)
+                  :for child-bound := (assoc-value bindings child-binding-id)
+                  :do (assert (or (eql child-ecid child-bound) ; if unrestricted, will be ecid
+                                  (e-graph-e-class-id= eg
+                                                       child-ecid
+                                                       (e-graph-e-node->e-class-id eg child-bound)))
+                              () "A child of binding id ~A, specifically ~A, did not agree with the ecid bound in the parent." binding-id child-binding-id))))))
 
 (defmethod e-graph-match ((eg e-graph) (pattern graph-pattern))
   (with-slots (binding-restrictions car-match-fn merge-car-bound-values-fn %binding-order %binding-parents) pattern
