@@ -1,6 +1,6 @@
 ;;;; Author: Mark Polyakov, released under MIT License
 
-(in-package :cluck)
+(in-package #:cluck)
 
 ;; An enode is represented as a list whose CAR is a symbol denoting a function and whose CDR is a list of e-class IDs
 

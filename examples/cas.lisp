@@ -1,7 +1,7 @@
 ;;;; Computer Algebra System using the CLuck e-graph library
 ;;;; Copyright (c) Mark Polyakov, released under MIT license
 
-(in-package :cluck/examples/cas)
+(in-package #:cluck/examples/cas)
 
 ;;;; REWRITE RULES
 

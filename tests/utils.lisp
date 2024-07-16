@@ -1,4 +1,4 @@
-(in-package :cluck/tests)
+(in-package #:cluck/tests)
 
 (defmacro with-e-graph (eg-sym &body body)
   (with-gensyms (x y)
