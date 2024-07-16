@@ -25,8 +25,10 @@
 
 (defvar *dot-node-attrs* ""
   "A string of extra attributes to apply to nodes (e-nodes) in graphviz plots.")
+
 (defvar *dot-subgraph-attrs* ""
   "A string of extra attributes to apply to subgraphs (e-classes) in graphviz plots.")
+
 (defvar *dot-layout-engine* "dot")
 
 (declftype (e-graph &key (:stream (or stream (eql t))) (:e-node-car-to-printable function)) t e-graph-plot-dot)

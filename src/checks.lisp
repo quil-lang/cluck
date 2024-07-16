@@ -5,8 +5,9 @@
 (declftype (e-graph) t check-e-graph-hashcons-invariant)
 (defun check-e-graph-hashcons-invariant (eg)
   "Throw an error if the hashcons invariant does not hold"
-  ;; For each e-node, make sure its canonical version is in the hashcons and points to the right place.
-  ;; In the end, check that there are no extraneous entries in the hashcons
+  ;; For each e-node, make sure its canonical version is in the
+  ;; hashcons and points to the right place.  In the end, check that
+  ;; there are no extraneous entries in the hashcons.
   (let (expected-hashcons-keys
         (hashcons (e-graph-e-node-e-classes eg)))
     (loop :for ecid :in (e-graph-e-class-id-list eg)
@@ -19,7 +20,8 @@
                       :do (error "Hashcons invariant violated: e-node missing from hashcons.")
                     :when (not (eq ec (e-graph-e-class-id->e-class
                                        eg
-                                       (gethash canonical-e-node hashcons)))) ; avoid re-canonicalizing e-node
+                                       ;; avoid re-canonicalizing e-node
+                                       (gethash canonical-e-node hashcons))))
                       :do (error "Hashcons invariant violated: e-node pointed to wrong e-class.")))
     (when (not (set-equal expected-hashcons-keys (hash-table-keys (e-graph-e-node-e-classes eg))
                           :test (e-graph-e-node-car=-fn eg)))

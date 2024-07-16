@@ -28,25 +28,34 @@
 (defclass tree-size-analyzer (e-analyzer-cost)
   ()
   (:documentation "An e-class analyzer that simply counts the smallest representation of each e-class."))
+
 (defvar +tree-size-analyzer+ (make-instance 'tree-size-analyzer))
+
 (defmethod e-analyzer-e-node-value ((a tree-size-analyzer) fn child-costs)
   (1+ (apply #'+ child-costs)))
+
 (defmethod e-analyzer-compare ((a tree-size-analyzer) v1 v2)
   (< v1 v2))
+
 (defmethod e-analyzer-parent-value ((a tree-size-analyzer))
   most-positive-fixnum)
 
 (defclass tree-depth-analyzer (e-analyzer-cost)
   ()
   (:documentation "An e-class analyzer that counts the smallest depth of any representation of each e-class."))
+
 (defvar +tree-depth-analyzer+ (make-instance 'tree-depth-analyzer))
+
 (defmethod e-analyzer-e-node-value ((a tree-depth-analyzer) fn child-costs)
   (1+ (apply #'min child-costs)))
+
 (defmethod e-analyzer-compare ((a tree-depth-analyzer) v1 v2)
   (< v1 v2))
+
 (defmethod e-analyzer-parent-value ((a tree-depth-analyzer))
-  most-positive-fixnum) ; won't cause overflow because we only ever decrease it (not that perf
-                                        ; matters a whole ton right here).
+  ;; won't cause overflow because we only ever decrease it (not that perf
+  ;; matters a whole ton right here).
+  most-positive-fixnum)
 
 (declftype (e-graph e-class-id e-analyzer-cost) generalized-e-node e-graph-e-class-cheapest-e-node)
 (defun e-graph-cheapest-representation-by-analyzer (eg ecid anal)
@@ -65,7 +74,8 @@ The cost is determined as the lowest according to ANALYZER, which must be a subc
                       ;; temp value for cycle detection
                       (setf (gethash ec class-costs) (cons nil (e-analyzer-parent-value anal)))
                       (setf (gethash ec class-costs)
-                            ;; Possible optimization, just minimize during the loop, maybe using ITERATE?
+                            ;; Possible optimization, just minimize
+                            ;; during the loop, maybe using ITERATE?
                             (extremum
                              (loop :for node :in (e-class-e-nodes ec)
                                    :for child-costs := (loop :for child-ecid :in (cdr node)
