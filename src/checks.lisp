@@ -7,7 +7,7 @@
   (let ((dirty-enodes-count
           (hash-table-count (e-graph-dirty-e-nodes e-graph))))
     (unless (zerop dirty-enodes-count)
-      (warn "The e-graph is dirty! It has ~d dirty nodes."
+      (warn "The e-graph is dirty! It has ~D dirty node~:P."
             dirty-enodes-count))))
 
 (declftype (e-graph) t check-e-graph-hashcons-invariant)
